@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic AI — Interactive Demo</title>
+<meta name="description" content="Run the real ReAct agent loop in your browser: it plans, calls tools, reads observations and answers. No API key, no backend.">
+<style>
+  :root {
+    --bg:#04060D; --panel:#090D17; --raised:#101625; --edge:#1C2438;
+    --ink:#D4DCEC; --dim:#7A88A6; --faint:#4A5670;
+    --green:#79DFA6; --amber:#E7C266; --red:#E7717D; --blue:#7DB0EE; --violet:#B49AEE;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.65 var(--mono); -webkit-font-smoothing:antialiased; }
+  a { color:var(--blue); }
+  .wrap { max-width:1180px; margin:0 auto; padding:22px 18px 70px; }
+
+  .strip {
+    border:1px solid var(--edge); background:var(--panel); padding:10px 14px;
+    font-size:12px; color:var(--dim); margin-bottom:22px; display:flex; flex-wrap:wrap; gap:6px 12px;
+  }
+  .strip b { color:var(--green); letter-spacing:.1em; }
+
+  header.hd { border-left:2px solid var(--violet); padding-left:16px; margin-bottom:24px; }
+  .prompt { font-size:12.5px; color:var(--violet); margin-bottom:10px; }
+  .prompt i { color:var(--faint); font-style:normal; }
+  h1 { margin:0 0 10px; font-size:clamp(26px,4.4vw,40px); letter-spacing:-.02em; }
+  h1 span { color:var(--violet); }
+  .tagline { margin:0; color:var(--dim); max-width:76ch; font-size:13.5px; }
+  ul.facts { margin:14px 0 0; padding:0; list-style:none; display:flex; flex-wrap:wrap; gap:18px; font-size:12px; color:var(--faint); }
+  ul.facts b { color:var(--ink); }
+
+  h2 { font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); margin:30px 0 12px; font-weight:500; }
+
+  form.ask { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+  form.ask input {
+    flex:1 1 320px; min-width:0; background:var(--panel); border:1px solid var(--edge);
+    color:var(--ink); font:inherit; padding:13px 15px;
+  }
+  form.ask input:focus { outline:none; border-color:var(--violet); }
+  button.go {
+    font:inherit; font-size:12px; letter-spacing:.14em; text-transform:uppercase; cursor:pointer;
+    background:transparent; color:var(--green); border:1px solid var(--green); padding:12px 22px;
+    transition:background .2s,color .2s;
+  }
+  button.go:hover:not(:disabled) { background:var(--green); color:var(--bg); }
+  button.go:disabled { opacity:.4; cursor:default; }
+
+  .presets { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px; }
+  .preset {
+    font:inherit; font-size:12px; cursor:pointer; text-align:left;
+    background:var(--panel); border:1px solid var(--edge); border-left:2px solid var(--blue);
+    color:var(--dim); padding:8px 12px; transition:background .2s,color .2s;
+  }
+  .preset:hover:not(:disabled) { background:var(--raised); color:var(--ink); }
+  .preset:disabled { opacity:.45; cursor:default; }
+  .preset--empty { border-left-color:var(--amber); }
+
+  .meta { display:flex; flex-wrap:wrap; gap:16px; font-size:11.5px; color:var(--faint); margin:0 0 14px; }
+  .meta b { color:var(--green); }
+
+  .trace { border-left:1px solid var(--edge); margin:0; padding:0 0 0 0; list-style:none; }
+  .step { position:relative; padding:0 0 16px 22px; }
+  .step::before {
+    content:''; position:absolute; left:-4px; top:6px; width:7px; height:7px; border-radius:50%;
+    background:var(--faint);
+  }
+  .step--thought::before { background:var(--blue); }
+  .step--tool_call::before { background:var(--amber); }
+  .step--observation::before { background:var(--green); }
+  .step--final::before { background:var(--violet); width:9px; height:9px; left:-5px; }
+  .step--error::before { background:var(--red); }
+  .step__k { font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
+  .step__k em { font-style:normal; color:var(--amber); }
+  .step__b { margin:4px 0 0; font-size:13px; color:#B2C0DA; white-space:pre-wrap; word-break:break-word; }
+  .step--final .step__b { color:var(--ink); font-size:14.5px; }
+  .step--error .step__b { color:var(--red); }
+
+  .cols { display:grid; gap:14px; grid-template-columns:1fr; margin-top:12px; }
+  @media (min-width:900px) { .cols { grid-template-columns:1fr 1fr; } }
+  .box { border:1px solid var(--edge); background:var(--panel); }
+  .box__bar { padding:9px 13px; border-bottom:1px solid var(--edge); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
+  .box__body { padding:13px; }
+  .kdoc { border-left:2px solid var(--edge); padding-left:11px; margin-bottom:12px; }
+  .kdoc:last-child { margin-bottom:0; }
+  .kdoc b { display:block; font-size:12.5px; color:var(--ink); }
+  .kdoc i { font-style:normal; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
+  .kdoc p { margin:5px 0 0; font-size:12px; color:var(--dim); }
+  .tool { display:flex; gap:10px; align-items:baseline; font-size:12.5px; margin-bottom:9px; }
+  .tool b { color:var(--amber); }
+  .tool span { color:var(--dim); }
+  .empty { color:var(--faint); font-size:12.5px; margin:0; }
+  footer { margin-top:40px; border-top:1px solid var(--edge); padding-top:16px; font-size:11.5px; color:var(--faint); }
+  footer p { max-width:90ch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="strip">
+    <b>LIVE</b>
+    <span>This is the project's own agent loop, compiled from <code>src/</code> and running in this page. No API key and no backend: the loop drives the deterministic mock provider the repo ships for offline runs, so the planning is real and the prose is canned.</span>
+  </p>
+
+  <header class="hd">
+    <p class="prompt">agent:~$ <i>run --provider mock</i></p>
+    <h1>Agentic <span>AI</span></h1>
+    <p class="tagline">
+      A ReAct agent: it reasons a step at a time, calls a tool when a tool helps, reads the
+      observation, and stops when it can answer. Every step below is emitted by the loop as it runs.
+    </p>
+    <ul class="facts" id="facts"></ul>
+  </header>
+
+  <h2>Ask the agent</h2>
+  <form class="ask" id="ask">
+    <input id="q" placeholder="Ask about tidal power — or try 240 * 0.24" autocomplete="off">
+    <button class="go" id="go" type="submit">Run</button>
+  </form>
+  <div class="presets" id="presets"></div>
+
+  <h2>Reasoning trace</h2>
+  <p class="meta" id="meta"></p>
+  <ul class="trace" id="trace"><li class="step"><p class="empty">Nothing run yet.</p></li></ul>
+
+  <div class="cols">
+    <section class="box">
+      <p class="box__bar">Knowledge base — what web_search searches</p>
+      <div class="box__body" id="corpus"></div>
+    </section>
+    <section class="box">
+      <p class="box__bar">Tools the agent may call</p>
+      <div class="box__body" id="tools"></div>
+    </section>
+  </div>
+
+  <footer>
+    <p>
+      <b>What is real:</b> the ReAct loop, the JSON contract it holds the model to, tool dispatch,
+      the arithmetic evaluator, and corpus retrieval — all compiled from the repository's own
+      <code>src/agent</code> and <code>src/store</code>. The only substitution is storage: a
+      read-only in-memory corpus stands in for Supabase.
+      <b>What is not:</b> the reasoning text. With no key there is no model, so a deterministic
+      mock provider decides the steps. Set <code>LLM_PROVIDER=gemini</code> locally and the same
+      loop reasons for real.
+    </p>
+  </footer>
+</div>
+
+<script type="module" src="./ui.js"></script>
+</body>
+</html>

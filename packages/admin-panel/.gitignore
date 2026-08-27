@@ -1,0 +1,8 @@
+node_modules
+dist
+.angular
+
+# env files never belong in the repo; only .example does
+.env
+.env.*
+!.env.example

@@ -1,0 +1,72 @@
+name: Deploy demo to GitHub Pages
+
+# Publishes demo/ only. The bundle is rebuilt here from src/ so the published
+# demo always runs the agent loop on main, and the job refuses to publish if a
+# credential-shaped string or a live provider call ever appears in the output.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "demo/**"
+      - "packages/agent-backend/src/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+      - run: node demo/build.mjs
+
+      - name: Refuse to publish a bundle that could carry a credential
+        run: |
+          fail=0
+
+          if grep -rIEn 'AIza[0-9A-Za-z_-]{15,}|eyJ[A-Za-z0-9_-]{20,}|postgres(ql)?://[^ "'"'"']*:[^ "'"'"']+@|-----BEGIN [A-Z ]*PRIVATE KEY' demo/; then
+            echo "::error::Credential-shaped string found in demo/."
+            fail=1
+          fi
+
+          # The browser bundle must not be able to read an environment at all.
+          if grep -q 'process\.env' demo/agent.bundle.js; then
+            echo "::error::demo/agent.bundle.js references process.env — the build defines were bypassed."
+            fail=1
+          fi
+
+          # The mock provider is the only one the demo may reach.
+          if ! grep -q 'mock-react-v1' demo/agent.bundle.js; then
+            echo "::error::Mock provider missing from the bundle."
+            fail=1
+          fi
+
+          exit $fail
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: demo
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

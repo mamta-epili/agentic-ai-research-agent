@@ -1,0 +1,74 @@
+# ---- Secrets: never commit -------------------------------------------------
+# Belt and braces. The package-level ignores already cover their own env files;
+# these rules mean a new package, or a stray file at the root, is covered too.
+# Only .example files belong in the repo.
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+!.env.local.example
+!**/.env.local.example
+
+# Anything key-shaped, wherever it lands
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+*credentials*.json
+service-account*.json
+
+# ---- Dependencies ----------------------------------------------------------
+# npm workspaces hoist to the root, so this is the big one.
+node_modules/
+**/node_modules/
+
+# ---- Generated demo bundle -------------------------------------------------
+# Built from src/ by demo/build.mjs, and rebuilt in CI before publishing, so
+# the committed copy would only ever be a stale duplicate.
+demo/agent.bundle.js
+
+# ---- Build output & framework caches ---------------------------------------
+dist/
+build/
+out/
+.next/
+**/.next/
+.angular/
+**/.angular/
+*.tsbuildinfo
+next-env.d.ts
+
+# ---- Supabase CLI scratch --------------------------------------------------
+# `supabase/.temp/` is machine-local state written by the CLI, not project
+# config. pooler-url holds a Postgres connection string, and project-ref and
+# linked-project.json identify the hosted project. None of it belongs in a
+# public repo. supabase/config.toml, schema.sql, seed.sql and migrations/ do,
+# and are deliberately left tracked.
+supabase/.temp/
+**/supabase/.temp/
+
+# ---- Local runtime state ---------------------------------------------------
+# Saved agent runs are local scratch: they hold whatever queries were typed
+# while testing. Seed data belongs in the repo; a live run log does not.
+packages/agent-backend/data/runs.json
+
+# ---- Logs ------------------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- OS & editor cruft -----------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+.idea/
+.vscode/
+*.swp

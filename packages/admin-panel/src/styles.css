@@ -1,0 +1,35 @@
+@import "ckeditor5/ckeditor5.css";
+
+:root {
+  --paper: #fbfbf9;
+  --surface: #ffffff;
+  --ink: #1a1c1e;
+  --muted: #6c7078;
+  --line: #e6e4de;
+  --accent: #137a63;
+  --tool: #b4690e;
+  --observe: #3a5a8c;
+  --mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--paper); color: var(--ink);
+  font-family: var(--sans); line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+
+/* Rich corpus content is injected via [innerHTML], so component-scoped styles
+   don't reach it — these must live in the global stylesheet. Constrain images
+   (CKEditor wraps them in figure.image, which is display:table and ignores a
+   max-width on the img alone) and tables so nothing overflows its card. */
+.doc-body.rich { overflow-wrap: anywhere; }
+.doc-body.rich figure { max-width: 100%; margin: 10px 0; }
+.doc-body.rich figure.image { display: block; }
+.doc-body.rich figure.image img,
+.doc-body.rich img { max-width: 100%; height: auto; border-radius: 6px; }
+.doc-body.rich table { border-collapse: collapse; margin: 8px 0; max-width: 100%; }
+.doc-body.rich td,
+.doc-body.rich th { border: 1px solid var(--line); padding: 4px 8px; }

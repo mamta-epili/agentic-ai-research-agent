@@ -1,0 +1,14 @@
+-- Seed data for local development (`supabase start` / `supabase db reset`).
+-- Left empty by default — runs are created by the agent at runtime.
+-- Example of a seeded run (uncomment to use):
+--
+-- insert into public.runs (id, query, status, steps, answer, provider, model)
+-- values (
+--   gen_random_uuid(),
+--   'Seeded example run',
+--   'completed',
+--   '[]'::jsonb,
+--   'This is a seeded run for local development.',
+--   'mock',
+--   'mock-react-v1'
+-- );

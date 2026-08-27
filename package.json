@@ -1,0 +1,17 @@
+{
+  "name": "agentic-ai-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agentic AI demo: Node/TS agent backend, Next.js chat, Angular admin panel.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "demo:build": "node demo/build.mjs",
+    "demo:watch": "node demo/build.mjs --watch",
+    "demo": "node demo/build.mjs && npx --yes serve demo -l 4173"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}
