@@ -9,6 +9,10 @@ on:
     paths:
       - "demo/**"
       - "packages/agent-backend/src/**"
+      # a dependency change alters the bundle the build produces, so it has to
+      # be able to trigger a rebuild too
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
